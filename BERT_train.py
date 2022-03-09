@@ -4,32 +4,32 @@ import torch
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForMaskedLM.from_pretrained('bert-base-uncased')
 
-text = ("After Abraham Lincoln won the November 1860 presidential "
-        "election on an anti-slavery platform, an initial seven "
-        "slave states declared their secession from the country "
-        "to form the Confederacy. War broke out in April 1861 "
-        "when secessionist forces attacked Fort Sumter in South "
-        "Carolina, just over a month after Lincoln's "
-        "inauguration.")
-inputs = tokenizer(text, return_tensors='pt')
-inputs['labels'] = inputs.input_ids.detach().clone()
+# text = ("After Abraham Lincoln won the November 1860 presidential "
+#         "election on an anti-slavery platform, an initial seven "
+#         "slave states declared their secession from the country "
+#         "to form the Confederacy. War broke out in April 1861 "
+#         "when secessionist forces attacked Fort Sumter in South "
+#         "Carolina, just over a month after Lincoln's "
+#         "inauguration.")
+# inputs = tokenizer(text, return_tensors='pt')
+# inputs['labels'] = inputs.input_ids.detach().clone()
 
-# create random array of floats in equal dimension to input_ids
-rand = torch.rand(inputs.input_ids.shape)
-# where the random array is less than 0.15, we set true
+# # create random array of floats in equal dimension to input_ids
+# rand = torch.rand(inputs.input_ids.shape)
+# # where the random array is less than 0.15, we set true
 
-mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * (inputs.input_ids != 102)
+# mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * (inputs.input_ids != 102)
 
-# create selection from mask_arr
-selection = torch.flatten((mask_arr[0]).nonzero()).tolist()
+# # create selection from mask_arr
+# selection = torch.flatten((mask_arr[0]).nonzero()).tolist()
 
-# apply selection index to inputs.input_ids, adding MASK tokens
-inputs.input_ids[0, selection] = 103
+# # apply selection index to inputs.input_ids, adding MASK tokens
+# inputs.input_ids[0, selection] = 103
 
-# pass inputs as kwarg to model
-outputs = model(**inputs)
+# # pass inputs as kwarg to model
+# outputs = model(**inputs)
 
-print(outputs)
+# print(outputs)
 
 with open('lm_data/clean.txt', 'r') as fp:
     text = fp.read().split('\n')
