@@ -18,7 +18,7 @@ with open("lm_data/clean.txt",'r') as fp:
 
 print(text[:5])
 
-inputs = tokenizer(text, return_tensors='pt', max_length=512, truncation=True, padding='max_length')
+inputs = tokenizer(text, return_tensors='pt', max_length=10, truncation=True, padding='max_length')
 inputs
 
 
@@ -54,7 +54,7 @@ dataset = MeditationsDataset(inputs)
 
 loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
-model = TN(rank = 100, vocab_size = config.vocab_size)
+model = TN(rank = 10, vocab_size = config.vocab_size)
 
 
 # and move our model over to the selected device
@@ -87,17 +87,21 @@ for epoch in range(epochs):
         # get teacher logits
         techer_outputs = teacher_model(input_ids, attention_mask=attention_mask,
                         labels=teacher_labels)
-        t_logits = techer_outputs.logits
-        t_logits_masked = t_logits[:,labels,:]
+        t_logits = torch.nn.functional.softmax(techer_outputs.logits,-1)
+        t_logits_masked = t_logits[:,labels,:].squeeze(1)
+        
         # get student logits
-        logits = model(input_ids)
+        s_logits = model(input_ids)
+        logits = torch.nn.functional.softmax(s_logits)
+        # print(t_logits_masked)
+        # print(logits)
 
         merged_loss, d_loss, nll_loss = distillation_loss(logits.view(-1, model.vocab_size),labels.view(-1),t_logits_masked,output_mode = "classification")
         
         # loss_fct = CrossEntropyLoss()  # -100 index = padding token
         # masked_lm_loss = loss_fct(logits.view(-1, model.vocab_size), labels.view(-1))
         # # extract loss
-        loss = d_loss
+        loss = merged_loss
         # calculate loss for every parameter that needs grad update
         loss.backward()
         # update parameters
