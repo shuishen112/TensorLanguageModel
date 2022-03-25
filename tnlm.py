@@ -97,13 +97,17 @@ class TN(nn.Module):
         # output = self.h2o(hidden)
 
         # unit = self.i2h(data)
-
         unit = data.contiguous().view(-1,self.rank,self.rank)
         # get hidden
         activition = torch.nn.Tanh()
-        m = torch.einsum("bij,bjk->bik",[m,unit])
+        # batch_size = unit.size(0)
+
+        # weight = self.i2h.weight.unsqueeze(0).repeat([batch_size,1,1])
+        # unit = torch.einsum("bij,bjk->bik",[unit,weight])
+        m = activition(torch.einsum("bij,bjk->bik",[m,unit]))
+        
         # # m = unit
-        hidden = activition(self.i2h(m))
+        hidden = self.i2h(m)
         output = self.h2o(hidden)
         return hidden, output
 
