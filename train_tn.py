@@ -9,6 +9,7 @@ from torch.utils import data
 
 from dataloader import DatasetFactory, PADDING_TOKEN
 from TN import TN_model
+from RNN import RNN_Model
 from util import print_tokens
 import pickle
 
@@ -35,8 +36,11 @@ def load_checkpoint(optimizer, model, file_path):
 
 def get_model(dataset, config):
 
-    return TN_model(rank = 10, output_size=dataset.encoder.vocabulary_size)
-
+    # return TN_model(rank = 10, output_size=dataset.encoder.vocabulary_size)
+    return RNN_Model(input_size=config['model_config']['embedding_size'],
+    hidden_dim = config['model_config']['hidden_size'],
+    output_size = dataset.encoder.vocabulary_size,
+    n_layers=1)
 
 def run_forward_pass_and_get_loss(model, input_x, target_y, lengths):
     input_x = input_x.to(model.device)
@@ -94,9 +98,9 @@ def run_training(model: TN_model, dataset, config: dict, validation: bool, valid
             nn.utils.clip_grad_norm_(model.parameters(), 1.5)
             optimizer.step()
 
-            if step % 1 == 0:
+            if step % 100 == 0:
                 print('Epoch: {} Loss for step {} : {}'.format(epoch, step, round(loss.item(), 4)))
-            if step % 1 == 0:
+            if step % 100 == 0:
                 print("predict:")
                 gen_sample = model.generate_text(dataset.encoder, 'hello', 200)
                 print(gen_sample)

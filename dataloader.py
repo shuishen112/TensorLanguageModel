@@ -292,7 +292,6 @@ class HutterPrizeDataset(LanguageModelingDataset):
         valid_data = data[-2 * self.num_test_chars: -self.num_test_chars]
         test_data = data[-self.num_test_chars:]
 
-        df_train = pd.DataFrame()
         if self.mode == 'train':
             return train_data
         elif self.mode == 'valid':
@@ -311,9 +310,13 @@ class DatasetFactory:
     @staticmethod
     def get_dataset(dataset: str, mode: str) -> LanguageModelingDataset:
         if dataset.lower() == 'text8':
+            # return Text8Dataset(mode=mode.lower(),
+            #                     batch_size=DatasetFactory.get_batch_size(text8config, mode),
+            #                     sequence_length=text8config['sequence_length'],num_test_chars = 1000)
             return Text8Dataset(mode=mode.lower(),
                                 batch_size=DatasetFactory.get_batch_size(text8config, mode),
                                 sequence_length=text8config['sequence_length'])
+                                
         elif dataset.lower() == 'ptb':
             return PTBCharDataset(mode=mode.lower(),
                                   batch_size=DatasetFactory.get_batch_size(text8config, mode),
