@@ -381,6 +381,41 @@ class litRNN(Baselignthing):
         self.save_hyperparameters()
 
 
+class TensorRAC(nn.Module):
+    # you can also accept arguments in your model constructor
+
+    #  we don't use the output in this implemention
+    def __init__(self, embed_size, hidden_size, output_size):
+        super(RNN, self).__init__()
+
+        self.hidden_size = hidden_size
+        input_size = embed_size + hidden_size
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.i2h = nn.Linear(input_size, hidden_size)
+
+        self.Wih = nn.Linear(embed_size, hidden_size)
+        self.Whh = nn.Linear(hidden_size, hidden_size)
+
+        self.h2o = nn.Linear(input_size, output_size)
+
+    def forward(self, data, last_hidden):
+        input = torch.cat((data, last_hidden), 1)
+        # hidden = torch.sigmoid(self.i2h(input))
+        wi = torch.relu(self.Wih(data))
+        wh = torch.relu(self.Whh(last_hidden))
+        # hidden = torch.tanh(wi + wh)
+        eps = 1e-7
+        hidden = torch.tanh(torch.log(wi + eps) + torch.log(wh + eps))
+        output = self.h2o(input)
+        return output, hidden
+
+    def initHidden(self, batch_size):
+        # return torch.zeros(batch_size,self.hidden_size).to(self.device)
+        return nn.init.kaiming_uniform_(torch.empty(batch_size, self.hidden_size)).to(
+            self.device
+        )
+
+
 class RNN(nn.Module):
 
     # you can also accept arguments in your model constructor
@@ -434,7 +469,9 @@ class RNN_layer(nn.Module):
         # recurrent rnn
         for i in range(seq_len):
             output, hidden_next = self.rnn(x[:, i, :], hidden)
-            mask = (i < text_lens).float().unsqueeze(1).expand_as(hidden_next).to(device)
+            mask = (
+                (i < text_lens).float().unsqueeze(1).expand_as(hidden_next).to(device)
+            )
             hidden_next = (hidden_next * mask + hidden * (1 - mask)).to(device)
             hiddens.append(hidden_next.unsqueeze(1))
             hidden = hidden_next
@@ -502,12 +539,12 @@ class litTNLM(Baselignthing):
 #     pad_index=0,
 # )
 
-# model = litSimpleRNN(
-#     vocab_size=len(vocab), embed_size=300, hidden_dim=256, output_size=2
-# )
-model = litTNLM(rank=20, vocab_size=len(vocab), output_size=2)
+model = litSimpleRNN(
+    vocab_size=len(vocab), embed_size=300, hidden_dim=256, output_size=2
+)
+# model = litTNLM(rank=10, vocab_size=len(vocab), output_size=2)
 # wandb_logger.watch(model, log="all")
-trainer = pl.Trainer(logger=None, max_epochs=10, accelerator="gpu")
+trainer = pl.Trainer(logger=None, max_epochs=20, accelerator="gpu")
 trainer.fit(model, loader_train, loader_validation)
 # wandb.finish()
 
