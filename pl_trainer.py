@@ -6,7 +6,7 @@
 
 # %%
 from datasets import load_dataset
-from more_itertools import last
+
 import torch
 
 # preprocessing and tokenizer
@@ -539,10 +539,10 @@ class litTNLM(Baselignthing):
 #     pad_index=0,
 # )
 
-model = litSimpleRNN(
-    vocab_size=len(vocab), embed_size=300, hidden_dim=256, output_size=2
-)
-# model = litTNLM(rank=10, vocab_size=len(vocab), output_size=2)
+# model = litSimpleRNN(
+#     vocab_size=len(vocab), embed_size=300, hidden_dim=256, output_size=2
+# )
+model = litTNLM(rank=5, vocab_size=len(vocab), output_size=2)
 # wandb_logger.watch(model, log="all")
 trainer = pl.Trainer(logger=None, max_epochs=20, accelerator="gpu")
 trainer.fit(model, loader_train, loader_validation)
