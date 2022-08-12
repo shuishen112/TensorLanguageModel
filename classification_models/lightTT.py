@@ -1,3 +1,4 @@
+from classification_models.base_model import Baselighting, cal_accuracy
 import torch
 import torch.nn as nn
 
@@ -77,8 +78,10 @@ class TN_layer(nn.Module):
         # recurrent tn
         for i in range(seq_len):
             hidden_next, output = self.tn(encoding[:, i, :], m)
-            mask = (i < text_lens).float().unsqueeze(1).unsqueeze(1).expand_as(hidden_next)
-            hidden_next = (hidden_next * mask + m * (1 - mask))
+            mask = (
+                (i < text_lens).float().unsqueeze(1).unsqueeze(1).expand_as(hidden_next)
+            )
+            hidden_next = hidden_next * mask + m * (1 - mask)
             hiddens.append(hidden_next.unsqueeze(1))
             m = hidden_next
 
@@ -112,3 +115,11 @@ class TN_model_for_classfication(nn.Module):
     def init_hidden(self, batch_size):
         hidden = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
         return hidden
+
+
+class litTNLM(Baselighting):
+    def __init__(self, rank, vocab_size, output_size):
+        super().__init__()
+        self.model = TN_model_for_classfication(
+            rank=rank, vocab_size=vocab_size, output_size=output_size
+        )
