@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 import torch
 from torch import nn
-
+import wandb
 
 def cal_accuracy(probs, target):
     predictions = probs.argmax(dim=1)
@@ -47,6 +47,7 @@ class Baselighting(pl.LightningModule):
         acc = cal_accuracy(predictions, label)
         self.log("val_loss", loss)
         self.log("val_acc", acc)
+        
         return acc
 
     def training_epoch_end(self, train_step_outputs) -> None:
@@ -57,4 +58,5 @@ class Baselighting(pl.LightningModule):
     def validation_epoch_end(self, validation_step_outputs):
         all_acc = torch.stack(validation_step_outputs)
         print("val_epoch_acc:", torch.mean(all_acc))
+        wandb.run.summary["best_val_acc"] = torch.mean(all_acc).cpu().numpy()
         self.log("val_epoch_acc", torch.mean(all_acc))

@@ -25,15 +25,12 @@ class TN(nn.Module):
         batch_size = data.size()[0]
         unit = data
         # get hidden
-        activition = torch.nn.Tanh()
+        activition = torch.nn.ReLU()
         # batch_size = unit.size(0)
 
         w1 = self.wih(m.squeeze(1))
         w2 = self.whh(unit).view(batch_size, self.rank, self.rank)
-
-        # hidden = torch.tanh(torch.mm(w1, w2))
-        # weight = self.i2h.weight.unsqueeze(0).repeat([batch_size,1,1])
-        # unit = torch.einsum("bij,bjk->bik",[unit,weight])
+        # w2 = unit.view(batch_size, self.rank, self.rank)
         hidden = activition(torch.einsum("bij,bjk->bik", [w1.unsqueeze(1), w2]))
 
         # # m = unit
@@ -56,14 +53,14 @@ class TN(nn.Module):
 
 
 class TN_layer(nn.Module):
-    def __init__(self, rank, vocab_size, output_size):
+    def __init__(self, rank, vocab_size, output_size, dropout=0.2):
         super(TN_layer, self).__init__()
         self.tn = TN(rank, output_size)
         self.rank = rank
         self.embedding = nn.Embedding(vocab_size, self.rank * self.rank, padding_idx=0)
 
         # self.embedding.weight.requires_grad = False
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, text_lens):
         batch_size = x.size(0)
@@ -92,18 +89,16 @@ class TN_layer(nn.Module):
 
 
 class TN_model_for_classfication(nn.Module):
-    def __init__(self, rank, vocab_size, output_size):
+    def __init__(self, rank, vocab_size, output_size, dropout):
         super(TN_model_for_classfication, self).__init__()
 
         self.rank = rank
         self.output_size = output_size
         self.vocab_size = vocab_size
 
-        self.tn = TN_layer(self.rank, self.vocab_size, output_size)
+        self.tn = TN_layer(self.rank, self.vocab_size, output_size, dropout)
         self.fc = nn.Linear(self.rank, output_size)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.softmax = nn.Softmax(dim=1)
-        self.log_softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x, lens):
         seq_output, hidden = self.tn(x, lens)
@@ -118,8 +113,11 @@ class TN_model_for_classfication(nn.Module):
 
 
 class litTNLM(Baselighting):
-    def __init__(self, rank, vocab_size, output_size):
+    def __init__(self, rank, vocab_size, output_size, dropout):
         super().__init__()
         self.model = TN_model_for_classfication(
-            rank=rank, vocab_size=vocab_size, output_size=output_size
+            rank=rank,
+            vocab_size=vocab_size,
+            output_size=output_size,
+            dropout=dropout,
         )

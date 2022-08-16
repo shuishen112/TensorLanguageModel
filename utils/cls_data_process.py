@@ -5,13 +5,15 @@ from torch.utils.data import Dataset
 from collections import Counter
 from torch.utils.data import DataLoader
 import torch
+from config import args
+import pandas as pd
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset = load_dataset("glue", "sst2")
 tokenizer = get_tokenizer("basic_english")
 max_length = 20
-batch_size = 64
+batch_size = args.batch_size
 
 
 def get_alphabet(corpuses):
@@ -109,7 +111,11 @@ class DataMaper(Dataset):
         return t_sentence, t_label, t_length
 
 
-train = DataMaper(dataset["train"], vocab, max_length)
+# train = DataMaper(dataset["train"], vocab, max_length)
+train_df = pd.read_csv("data/glue_data/SST-2/train_aug.tsv", "\t")
+train = DataMaper(train_df, vocab, max_length)
+# train = DataMaper(dataset["train"], vocab, max_length)
+
 validation = DataMaper(dataset["validation"], vocab, max_length)
 test = DataMaper(dataset["test"], vocab, max_length)
 
