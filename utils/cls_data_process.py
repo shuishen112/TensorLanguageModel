@@ -12,8 +12,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 dataset = load_dataset("glue", "sst2")
 tokenizer = get_tokenizer("basic_english")
-max_length = 20
-batch_size = args.batch_size
 
 
 def get_alphabet(corpuses):
@@ -63,9 +61,9 @@ def get_embedding(alphabet, filename="", embedding_size=100):
     return embedding
 
 
-embedding = get_embedding(
-    vocab, filename="embedding/glove.6B.300d.txt", embedding_size=300
-)
+# embedding = get_embedding(
+#     vocab, filename="embedding/glove.6B.300d.txt", embedding_size=300
+# )
 
 
 def convert_to_word_ids(sentence, alphabet, max_len=40):
@@ -111,14 +109,14 @@ class DataMaper(Dataset):
         return t_sentence, t_label, t_length
 
 
-# train = DataMaper(dataset["train"], vocab, max_length)
-train_df = pd.read_csv("data/glue_data/SST-2/train_aug.tsv", "\t")
-train = DataMaper(train_df, vocab, max_length)
-# train = DataMaper(dataset["train"], vocab, max_length)
+train = DataMaper(dataset["train"], vocab, args.max_length)
+# train_df = pd.read_csv("data/glue_data/SST-2/train_aug.tsv", "\t")
+# train = DataMaper(train_df, vocab, args.max_length)
+# train = DataMaper(dataset["train"], vocab, args.max_length)
 
-validation = DataMaper(dataset["validation"], vocab, max_length)
-test = DataMaper(dataset["test"], vocab, max_length)
+validation = DataMaper(dataset["validation"], vocab, args.max_length)
+test = DataMaper(dataset["test"], vocab, args.max_length)
 
-loader_train = DataLoader(train, batch_size=batch_size, shuffle=True)
-loader_validation = DataLoader(validation, batch_size=batch_size)
-loader_test = DataLoader(test, batch_size=batch_size)
+loader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True)
+loader_validation = DataLoader(validation, batch_size=args.batch_size)
+loader_test = DataLoader(test, batch_size=args.batch_size)

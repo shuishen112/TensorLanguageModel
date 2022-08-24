@@ -3,82 +3,23 @@ import torch
 import torch.nn as nn
 
 
-active = {
-    "nn.ReLU": nn.ReLU(),
-    "nn.RReLU": nn.RReLU(),
-    "nn.LeakyReLU": nn.LeakyReLU(),
-    "nn.ReLU6": nn.ReLU6(),
-    "nn.SELU": nn.SELU(),
-    "nn.GELU": nn.GELU(),
-}
-
-
-class TN_3order(nn.Module):
-    def __init__(self, rank, output_size, activation):
-        super(TN_3order, self).__init__()
-        # tensor network unit
-        self.output_size = output_size
-        self.rank = rank
-        self.activation = activation
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.three_order = nn.init.orthogonal_(
-        #     nn.Parameter(torch.zeros(self.rank, self.rank, self.rank * self.rank))
-        # ).to(self.device)
-        self.three_order = nn.Bilinear(self.rank, self.rank * self.rank, self.rank)
-        self.h2o = nn.Linear(self.rank, output_size)
-
-    def forward(self, data, m):
-
-        unit = data
-        h = m.squeeze(1)
-        activation = active[self.activation]
-        hidden = activation(self.three_order(h, unit))
-        # hidden = activation(nn.functional.bilinear(h, unit, self.three_order))
-        output = self.h2o(hidden)
-        hidden = hidden.unsqueeze(1)
-        return hidden, output
-
-    def init_m1(self, batch_size):
-        # return torch.ones(batch_size, 1, self.rank).to(self.device)
-        return nn.init.kaiming_uniform_(torch.empty(batch_size, 1, self.rank)).to(
-            self.device
-        )
-        # return nn.Linear(1,self.rank).to(self.device)
-
-
 class TN(nn.Module):
 
     # tensor network unit
-    def __init__(self, rank, output_size, activation):
+    def __init__(self, rank, output_size):
         super(TN, self).__init__()
 
         self.rank = rank
         self.output_size = output_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = torch.device('cpu')
-        # self.i2h = nn.Linear(self.rank,self.rank)
-        self.wih = nn.Linear(self.rank, self.rank)
-        self.whh = nn.Linear(self.rank * self.rank, self.rank * self.rank)
-        self.h2o = nn.Linear(self.rank, output_size)
-        self.activation = activation
 
     def forward(self, data, m):
 
-        # unit = data.contiguous().view(-1, self.rank, self.rank)
-        # unit = data.contiguous.view(-1, self.rank)
         batch_size = data.size()[0]
         unit = data
         # get hidden
 
-        activition = active[self.activation]
-        # batch_size = unit.size(0)
-
-        w1 = self.wih(m.squeeze(1))
-        w2 = self.whh(unit).view(batch_size, self.rank, self.rank)
-        # w2 = unit.view(batch_size, self.rank, self.rank)
-        hidden = activition(
-            torch.einsum("bij,bjk->bik", [w1.unsqueeze(1), w2])
-        )  # [batch, 1, rank] []
+        hidden = torch.einsum("bij,bjk->bik", [m, unit])
 
         # # m = unit
         # hidden = self.i2h(m)
@@ -100,11 +41,9 @@ class TN(nn.Module):
 
 
 class TN_layer(nn.Module):
-    def __init__(
-        self, rank, vocab_size, output_size, dropout=0.2, activation="nn.RELU"
-    ):
+    def __init__(self, rank, vocab_size, output_size, dropout=0.2):
         super(TN_layer, self).__init__()
-        self.tn = TN_3order(rank, output_size, activation)
+        self.tn = TN(rank, output_size)
         self.rank = rank
         self.embedding = nn.Embedding(vocab_size, self.rank * self.rank, padding_idx=0)
 
@@ -138,14 +77,14 @@ class TN_layer(nn.Module):
 
 
 class TN_model_for_classfication(nn.Module):
-    def __init__(self, rank, vocab_size, output_size, dropout, activation):
+    def __init__(self, rank, vocab_size, output_size, dropout):
         super(TN_model_for_classfication, self).__init__()
 
         self.rank = rank
         self.output_size = output_size
         self.vocab_size = vocab_size
 
-        self.tn = TN_layer(self.rank, self.vocab_size, output_size, dropout, activation)
+        self.tn = TN_layer(self.rank, self.vocab_size, output_size, dropout)
         self.fc = nn.Linear(self.rank, output_size)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -162,12 +101,11 @@ class TN_model_for_classfication(nn.Module):
 
 
 class litTNLM(Baselighting):
-    def __init__(self, rank, vocab_size, output_size, dropout, activation):
+    def __init__(self, rank, vocab_size, output_size, dropout):
         super().__init__()
         self.model = TN_model_for_classfication(
             rank=rank,
             vocab_size=vocab_size,
             output_size=output_size,
             dropout=dropout,
-            activation=activation,
         )
