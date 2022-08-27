@@ -11,17 +11,17 @@ import math
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ntokens = len(corpus.dictionary)
 
-model = RNNModel(
-    "LSTM",
-    ntokens,
-    args.embed_size,
-    args.hidden_size,
-    args.nlayers,
-    args.dropout,
-    args.tied,
-).to(device)
+# model = RNNModel(
+#     "LSTM",
+#     ntokens,
+#     args.embed_size,
+#     args.hidden_size,
+#     args.nlayers,
+#     args.dropout,
+#     args.tied,
+# ).to(device)
 
-model = RNN_language_model(ntokens, args.embed_size, args.hidden_size, 0)
+model = RNN_language_model(ntokens, args.embed_size, args.hidden_size, 0).to(device)
 
 
 def repackage_hidden(h):
@@ -34,10 +34,12 @@ def repackage_hidden(h):
 
 criterion = nn.CrossEntropyLoss()
 
+optimizer = torch.optim.Adam(model.parameters())
+
 clip = 0.25
 lr = 20
 log_interval = 200
-epochs = 1
+epochs = 10
 args.save = "model.pt"
 best_val_loss = None
 
@@ -47,7 +49,8 @@ def evaluate(data_source):
     model.eval()
     total_loss = 0.0
     ntokens = len(corpus.dictionary)
-    hidden = model.init_hidden(args.eval_batch_size)
+    # hidden = model.init_hidden(args.eval_batch_size)
+    hidden = model.rnn_cell.initHidden(args.eval_batch_size)
     with torch.no_grad():
         for i in range(0, data_source.size(0) - 1, args.batch_size):
             data, targets = get_batch(data_source, i)
@@ -60,26 +63,30 @@ def evaluate(data_source):
 
 def train():
     # Turn on training mode which enables dropout.
+
     model.train()
     total_loss = 0.0
     start_time = time.time()
     ntokens = len(corpus.dictionary)
     # hidden = model.init_hidden(args.batch_size)
-    hidden = model.rnn_layer.rnn_cell.initHidden(args.batch_size)
+    hidden = model.rnn_cell.initHidden(args.batch_size)
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.batch_size)):
         data, targets = get_batch(train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
         hidden = repackage_hidden(hidden)
-        model.zero_grad()
+        # model.zero_grad()
         output, hidden = model(data, hidden)
         loss = criterion(output.view(-1, ntokens), targets)
+        optimizer.zero_grad()
         loss.backward()
-
+        optimizer.step()
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        for p in model.parameters():
-            p.data.add_(-lr, p.grad.data)
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+        # for name, param in model.named_parameters():
+        #     print(name, param.grad)
+        # for p in model.parameters():
+        #     p.data.add_(-lr, p.grad.data)
 
         total_loss += loss.item()
 
@@ -130,8 +137,8 @@ with open(args.save, "rb") as f:
     # after load the rnn params are not a continuous chunk of memory
     # this makes them a continuous chunk, and will speed up forward pass
     # Currently, only rnn model supports flatten_parameters function.
-    if args.model in ["RNN_TANH", "RNN_RELU", "LSTM", "GRU"]:
-        model.rnn.flatten_parameters()
+    # if args.model in ["RNN_TANH", "RNN_RELU", "LSTM", "GRU"]:
+    #     model.rnn.flatten_parameters()
 
 # Run on test data.
 test_loss = evaluate(test_data)
