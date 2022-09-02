@@ -16,7 +16,7 @@ def set_seed(args: argparse.Namespace):
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    # if args.gpus > 0:
+    # if args.gpus > 0: 
     #     torch.cuda.manual_seed_all(args.seed)
 
 

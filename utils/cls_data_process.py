@@ -109,6 +109,11 @@ class DataMaper(Dataset):
         return t_sentence, t_label, t_length
 
 
+def ClassificationDataModule(pl.LightningDataModule):
+    def __init__(self, data_dir: str = "./"):
+        # super().__init__()
+        # self.data = 
+        pass
 train = DataMaper(dataset["train"], vocab, args.max_length)
 # train_df = pd.read_csv("data/glue_data/SST-2/train_aug.tsv", "\t")
 # train = DataMaper(train_df, vocab, args.max_length)

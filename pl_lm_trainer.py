@@ -1,14 +1,14 @@
-from language_models.simpleRNN import RNNModel
-from language_models.RNN import RNN_language_model
-from utils.lm_data_process import corpus
-from utils.lm_data_process import get_batch, train_data, test_data, val_data
+import math
+import time
+
 import torch
 import torch.nn as nn
-from lm_config import args
-import time
-import math
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from language_models.RNN import RNN_language_model
+from language_models.simpleRNN import RNNModel
+from lm_config import args
+from utils.lm_data_process import corpus, get_batch, test_data, train_data, val_data
+
 ntokens = len(corpus.dictionary)
 
 # model = RNNModel(
