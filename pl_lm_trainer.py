@@ -4,7 +4,7 @@ import time
 import torch
 import torch.nn as nn
 
-from language_models.RNN import RNN_language_model
+from language_models.lightRNN import RNN_language_model
 from language_models.simpleRNN import RNNModel
 from lm_config import args
 from utils.lm_data_process import corpus, get_batch, test_data, train_data, val_data

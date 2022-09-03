@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import wandb
 
+
 def cal_accuracy(probs, target):
     predictions = probs.argmax(dim=1)
     corrects = predictions == target
@@ -47,7 +48,7 @@ class Baselighting(pl.LightningModule):
         acc = cal_accuracy(predictions, label)
         self.log("val_loss", loss)
         self.log("val_acc", acc)
-        
+
         return acc
 
     def training_epoch_end(self, train_step_outputs) -> None:

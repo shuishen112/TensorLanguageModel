@@ -1,16 +1,17 @@
-from datasets import load_dataset
-from torchtext.data.utils import get_tokenizer
-import numpy as np
-from torch.utils.data import Dataset
 from collections import Counter
-from torch.utils.data import DataLoader
-import torch
-from config import args
+from typing import Optional
+
+import numpy as np
 import pandas as pd
+import pytorch_lightning as pl
+import torch
+from datasets import load_dataset
+from torch.utils.data import DataLoader, Dataset
+from torchtext.data.utils import get_tokenizer
+
+from config import args
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-dataset = load_dataset("glue", "sst2")
 tokenizer = get_tokenizer("basic_english")
 
 
@@ -33,9 +34,6 @@ def get_alphabet(corpuses):
     word_dict["<PAD>"] = 0
 
     return word_dict
-
-
-vocab = get_alphabet([dataset["train"], dataset["validation"]])
 
 
 def get_embedding(alphabet, filename="", embedding_size=100):
@@ -109,19 +107,27 @@ class DataMaper(Dataset):
         return t_sentence, t_label, t_length
 
 
-def ClassificationDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "./"):
-        # super().__init__()
-        # self.data = 
-        pass
-train = DataMaper(dataset["train"], vocab, args.max_length)
-# train_df = pd.read_csv("data/glue_data/SST-2/train_aug.tsv", "\t")
-# train = DataMaper(train_df, vocab, args.max_length)
-# train = DataMaper(dataset["train"], vocab, args.max_length)
+class ClassificationDataModule(pl.LightningDataModule):
+    def __init__(self, data_name: str = "sst2"):
+        super().__init__()
+        self.dataset = load_dataset("glue", data_name)
+        self.vocab = get_alphabet([self.dataset["train"], self.dataset["validation"]])
 
-validation = DataMaper(dataset["validation"], vocab, args.max_length)
-test = DataMaper(dataset["test"], vocab, args.max_length)
+    # def prepare_data(self):
 
-loader_train = DataLoader(train, batch_size=args.batch_size, shuffle=True)
-loader_validation = DataLoader(validation, batch_size=args.batch_size)
-loader_test = DataLoader(test, batch_size=args.batch_size)
+    def setup(self, stage: Optional[str] = None) -> None:
+        self.train = DataMaper(self.dataset["train"], self.vocab, args.max_length)
+        self.validation = DataMaper(
+            self.dataset["validation"], self.vocab, args.max_length
+        )
+        self.test = DataMaper(self.dataset["test"], self.vocab, args.max_length)
+
+    def train_dataloader(self):
+
+        return DataLoader(self.train, batch_size=args.batch_size, shuffle=True)
+
+    def val_dataloader(self):
+        return DataLoader(self.validation, batch_size=args.batch_size)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, batch_size=args.batch_size)
