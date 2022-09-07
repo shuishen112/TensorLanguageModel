@@ -104,7 +104,7 @@ class TN_layer(nn.Module):
         self, rank, vocab_size, output_size, dropout=0.2, activation="nn.RELU"
     ):
         super(TN_layer, self).__init__()
-        self.tn = TN_3order(rank, output_size, activation)
+        self.tn = TN(rank, output_size, activation)
         self.rank = rank
         self.embedding = nn.Embedding(vocab_size, self.rank * self.rank, padding_idx=0)
 

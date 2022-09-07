@@ -25,7 +25,7 @@ def set_seed(args: argparse.Namespace):
 set_seed(args)
 
 # generate data batch and iterator
-data_module = ClassificationDataModule(data_name="cola")
+data_module = ClassificationDataModule(data_name="sst2")
 
 wandb_logger = WandbLogger(project="ICLR", config=args)
 wandb.define_metric("val_epoch_acc", summary="max")
@@ -33,19 +33,19 @@ wandb.define_metric("val_epoch_acc", summary="max")
 #     len(vocab), e_dim=args.embed_size, h_dim=args.hidden_size, o_dim=args.output_size
 # )
 
-model = litSimpleRNN(
-    vocab_size=len(data_module.vocab),
-    embed_size=args.embed_size,
-    hidden_dim=args.hidden_size,
-    output_size=args.output_size,
-)
-# model = litTNLM(
-#     rank=args.rank,
-#     vocab_size=len(vocab),
+# model = litSimpleRNN(
+#     vocab_size=len(data_module.vocab),
+#     embed_size=args.embed_size,
+#     hidden_dim=args.hidden_size,
 #     output_size=args.output_size,
-#     dropout=args.dropout,
-#     activation=args.activation,
 # )
+model = litTNLM(
+    rank=args.rank,
+    vocab_size=len(data_module.vocab),
+    output_size=args.output_size,
+    dropout=args.dropout,
+    activation=args.activation,
+)
 
 trainer = pl.Trainer(logger=wandb_logger, max_epochs=args.epoch, accelerator="gpu")
 trainer.fit(model, datamodule=data_module)

@@ -11,7 +11,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--batch_size",
-    default=64,
+    default=32,
     type=int,
     help="batch_size",
 )
@@ -36,7 +36,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--rank",
-    default=5,
+    default=3,
     type=int,
     help="rank of tensor train",
 )
