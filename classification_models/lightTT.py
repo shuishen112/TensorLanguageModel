@@ -1,7 +1,7 @@
-from classification_models.base_model import Baselighting, cal_accuracy
+from classification_models.base_model import Baselighting
 import torch
 import torch.nn as nn
-
+from config import args
 
 active = {
     "nn.ReLU": nn.ReLU(),
@@ -13,17 +13,14 @@ active = {
 }
 
 
-class TN_3order(nn.Module):
+class SecondOrderCell(nn.Module):
     def __init__(self, rank, output_size, activation):
-        super(TN_3order, self).__init__()
+        super(SecondOrderCell, self).__init__()
         # tensor network unit
         self.output_size = output_size
         self.rank = rank
         self.activation = activation
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.three_order = nn.init.orthogonal_(
-        #     nn.Parameter(torch.zeros(self.rank, self.rank, self.rank * self.rank))
-        # ).to(self.device)
         self.three_order = nn.Bilinear(self.rank, self.rank * self.rank, self.rank)
         self.h2o = nn.Linear(self.rank, output_size)
 
@@ -33,7 +30,6 @@ class TN_3order(nn.Module):
         h = m.squeeze(1)
         activation = active[self.activation]
         hidden = activation(self.three_order(h, unit))
-        # hidden = activation(nn.functional.bilinear(h, unit, self.three_order))
         output = self.h2o(hidden)
         hidden = hidden.unsqueeze(1)
         return hidden, output
@@ -46,11 +42,11 @@ class TN_3order(nn.Module):
         # return nn.Linear(1,self.rank).to(self.device)
 
 
-class TN(nn.Module):
+class TNLMCell(nn.Module):
 
     # tensor network unit
     def __init__(self, rank, output_size, activation):
-        super(TN, self).__init__()
+        super(TNLMCell, self).__init__()
 
         self.rank = rank
         self.output_size = output_size
@@ -104,7 +100,12 @@ class TN_layer(nn.Module):
         self, rank, vocab_size, output_size, dropout=0.2, activation="nn.RELU"
     ):
         super(TN_layer, self).__init__()
-        self.tn = TN(rank, output_size, activation)
+        if args.cell == "Second":
+            self.tn = SecondOrderCell(rank, output_size, activation)
+        elif args.cell == "TinyTNLM":
+            self.tn = TNLMCell(rank, output_size, activation)
+        else:
+            print("there is no cell implemented")
         self.rank = rank
         self.embedding = nn.Embedding(vocab_size, self.rank * self.rank, padding_idx=0)
 
@@ -123,7 +124,7 @@ class TN_layer(nn.Module):
         hiddens = []
         # recurrent tn
         for i in range(seq_len):
-            hidden_next, output = self.tn(encoding[:, i, :], m)
+            hidden_next, _ = self.tn(encoding[:, i, :], m)
             mask = (
                 (i < text_lens).float().unsqueeze(1).unsqueeze(1).expand_as(hidden_next)
             )
@@ -137,7 +138,7 @@ class TN_layer(nn.Module):
         return hidden_tensor, final_hidden
 
 
-class TN_model_for_classfication(nn.Module):
+class TN_model_for_classfication(Baselighting):
     def __init__(self, rank, vocab_size, output_size, dropout, activation):
         super(TN_model_for_classfication, self).__init__()
 
@@ -147,7 +148,6 @@ class TN_model_for_classfication(nn.Module):
 
         self.tn = TN_layer(self.rank, self.vocab_size, output_size, dropout, activation)
         self.fc = nn.Linear(self.rank, output_size)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x, lens):
         seq_output, hidden = self.tn(x, lens)
@@ -159,15 +159,3 @@ class TN_model_for_classfication(nn.Module):
     def init_hidden(self, batch_size):
         hidden = torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(self.device)
         return hidden
-
-
-class litTNLM(Baselighting):
-    def __init__(self, rank, vocab_size, output_size, dropout, activation):
-        super().__init__()
-        self.model = TN_model_for_classfication(
-            rank=rank,
-            vocab_size=vocab_size,
-            output_size=output_size,
-            dropout=dropout,
-            activation=activation,
-        )

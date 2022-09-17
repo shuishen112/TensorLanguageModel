@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import torch
-from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset
 from torchtext.data.utils import get_tokenizer
 
@@ -23,7 +22,7 @@ def get_alphabet(corpuses):
     word_counter = Counter()
 
     for corpus in corpuses:
-        for item in corpus:
+        for _, item in corpus.iterrows():
             tokens = tokenizer(item["sentence"])
             for token in tokens:
                 word_counter[token] += 1
@@ -86,8 +85,8 @@ def convert_to_word_ids(sentence, alphabet, max_len=40):
 
 class DataMaper(Dataset):
     def __init__(self, dataset, vocab, max_length=20):
-        self.x = dataset["sentence"]
-        self.y = dataset["label"]
+        self.x = dataset["sentence"].to_list()
+        self.y = dataset["label"].to_list()
         self.max_length = max_length
         self.vocab = vocab
 
@@ -110,17 +109,32 @@ class DataMaper(Dataset):
 class ClassificationDataModule(pl.LightningDataModule):
     def __init__(self, data_name: str = "sst2"):
         super().__init__()
-        self.dataset = load_dataset("glue", data_name)
-        self.vocab = get_alphabet([self.dataset["train"], self.dataset["validation"]])
+        df_train = pd.read_csv(
+            "data/classfication_data/sst2/train.csv",
+            sep="\t",
+            names=["sentence", "label"],
+        )
+        df_validation = pd.read_csv(
+            "data/classfication_data/sst2/dev.csv",
+            sep="\t",
+            names=["sentence", "label"],
+        )
+        df_test = pd.read_csv(
+            "data/classfication_data/sst2/test.csv",
+            sep="\t",
+            names=["sentence", "label"],
+        )
+        self.vocab = get_alphabet([df_train, df_validation])
 
-    # def prepare_data(self):
+        self.train = DataMaper(df_train, self.vocab, args.max_length)
+        self.validation = DataMaper(df_validation, self.vocab, args.max_length)
+        self.test = DataMaper(df_test, self.vocab, args.max_length)
+        self.data_name = data_name
 
     def setup(self, stage: Optional[str] = None) -> None:
-        self.train = DataMaper(self.dataset["train"], self.vocab, args.max_length)
-        self.validation = DataMaper(
-            self.dataset["validation"], self.vocab, args.max_length
-        )
-        self.test = DataMaper(self.dataset["test"], self.vocab, args.max_length)
+
+        # load dataset
+        pass
 
     def train_dataloader(self):
 

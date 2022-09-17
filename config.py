@@ -66,6 +66,12 @@ parser.add_argument(
     default=42,
     help="random seed for initialization",
 )
+parser.add_argument("--data_name", default="sst2", help=" dataset name")
 
+parser.add_argument(
+    "--cell",
+    default="Second",
+    help=" cell name: Second, TinyTNLM, RNN, MRNN, MIRNN",
+)
 args = parser.parse_args()
 print(args)

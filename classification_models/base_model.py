@@ -18,9 +18,7 @@ class Baselighting(pl.LightningModule):
         super().__init__()
 
     def forward(self, x, lengths):
-        encode = self.model(x, lengths)
-        return encode
-
+        pass
     # optimizers go into configure_optimizer
 
     def configure_optimizers(self):
@@ -30,24 +28,67 @@ class Baselighting(pl.LightningModule):
     # train and validation
     def training_step(self, train_batch, batch_idx):
         text, label, lengths = train_batch
-        predictions = self.model(text, lengths)
+        predictions = self(text, lengths)
         criterion = nn.CrossEntropyLoss()
 
         loss = criterion(predictions, label)
         acc = cal_accuracy(predictions, label)
-        self.log("train_loss", loss)
+        self.log(
+            "train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True
+        )
         self.log("acc", acc)
         return {"loss": loss, "train_acc": acc}
 
     def validation_step(self, val_batch, batch_idx):
         text, label, lengths = val_batch
-        predictions = self.model(text, lengths)
+        predictions = self(text, lengths)
         criterion = nn.CrossEntropyLoss()
 
         loss = criterion(predictions, label)
         acc = cal_accuracy(predictions, label)
-        self.log("val_loss", loss)
-        self.log("val_acc", acc)
+        self.log(
+            "val_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+        self.log(
+            "val_acc",
+            acc,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+
+        return acc
+
+    def test_step(self, batch, batch_idx):
+        text, label, lengths = batch
+        predictions = self(text, lengths)
+
+        criterion = nn.CrossEntropyLoss()
+
+        loss = criterion(predictions, label)
+        acc = cal_accuracy(predictions, label)
+        self.log(
+            "test_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
+        self.log(
+            "test_acc",
+            acc,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True,
+        )
 
         return acc
 
