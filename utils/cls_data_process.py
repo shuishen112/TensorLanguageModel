@@ -110,17 +110,17 @@ class ClassificationDataModule(pl.LightningDataModule):
     def __init__(self, data_name: str = "sst2"):
         super().__init__()
         df_train = pd.read_csv(
-            "data/classfication_data/sst2/train.csv",
+            f"data/classfication_data/{data_name}/train.csv",
             sep="\t",
             names=["sentence", "label"],
         )
         df_validation = pd.read_csv(
-            "data/classfication_data/sst2/dev.csv",
+            f"data/classfication_data/{data_name}/dev.csv",
             sep="\t",
             names=["sentence", "label"],
         )
         df_test = pd.read_csv(
-            "data/classfication_data/sst2/test.csv",
+            f"data/classfication_data/{data_name}/test.csv",
             sep="\t",
             names=["sentence", "label"],
         )

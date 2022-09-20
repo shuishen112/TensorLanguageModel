@@ -27,7 +27,7 @@ def set_seed(args: argparse.Namespace):
 set_seed(args)
 
 # generate data batch and iterator
-data_module = ClassificationDataModule(data_name="sst2")
+data_module = ClassificationDataModule(data_name=args.data_name)
 
 wandb_logger = WandbLogger(
     project="ICLR", config=args, name=f"{args.cell}_{args.data_name}"
@@ -36,20 +36,23 @@ wandb.define_metric("val_epoch_acc", summary="max")
 # model = litCNN(
 #     len(vocab), e_dim=args.embed_size, h_dim=args.hidden_size, o_dim=args.output_size
 # )
-
-# model = RNN_Model_for_classfication(
-#     vocab_size=len(data_module.vocab),
-#     embed_size=args.embed_size,
-#     hidden_dim=args.hidden_size,
-#     output_size=args.output_size,
-# )
-model = TN_model_for_classfication(
-    rank=args.rank,
-    vocab_size=len(data_module.vocab),
-    output_size=args.output_size,
-    dropout=args.dropout,
-    activation=args.activation,
-)
+if args.cell in ["RNN", "MRNN", "MIRNN", "RACs"]:
+    model = RNN_Model_for_classfication(
+        vocab_size=len(data_module.vocab),
+        embed_size=args.embed_size,
+        hidden_dim=args.hidden_size,
+        output_size=args.output_size,
+    )
+elif args.cell in ["TinyTNLM", "Second"]:
+    model = TN_model_for_classfication(
+        rank=args.rank,
+        vocab_size=len(data_module.vocab),
+        output_size=args.output_size,
+        dropout=args.dropout,
+        activation=args.activation,
+    )
+else:
+    print("there is no cell")
 
 checkpoint_callback = ModelCheckpoint(
     monitor="val_acc",
@@ -60,7 +63,7 @@ checkpoint_callback = ModelCheckpoint(
 )
 trainer = pl.Trainer(
     logger=wandb_logger,
-    max_epochs=20,
+    max_epochs=args.epoch,
     accelerator="gpu",
     # limit_train_batches=10,
     callbacks=checkpoint_callback,

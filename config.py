@@ -17,7 +17,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--epoch",
-    default=30,
+    default=50,
     type=int,
     help="epoch",
 )
@@ -66,11 +66,11 @@ parser.add_argument(
     default=42,
     help="random seed for initialization",
 )
-parser.add_argument("--data_name", default="sst2", help=" dataset name")
+parser.add_argument("--data_name", default="mr", help=" dataset name")
 
 parser.add_argument(
     "--cell",
-    default="Second",
+    default="RNN",
     help=" cell name: Second, TinyTNLM, RNN, MRNN, MIRNN",
 )
 args = parser.parse_args()

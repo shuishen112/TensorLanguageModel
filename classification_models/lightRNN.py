@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 from classification_models.base_model import Baselighting
-from classification_models.variant_rnn_cell import MIRNNCell, RNN, MRNNCell
+from classification_models.variant_rnn_cell import MIRNNCell, RNN, MRNNCell, RACs
 from config import args
 
 
@@ -14,6 +14,8 @@ class RNN_layer(nn.Module):
             self.rnn = MRNNCell(embed_size, hidden_dim, output_size)
         elif args.cell == "MIRNN":
             self.rnn = MIRNNCell(embed_size, hidden_dim, output_size)
+        elif args.cell == "RACs":
+            self.rnn = RACs(embed_size, hidden_dim, output_size)
         self.embedding = nn.Embedding(vocab_size, embed_size, padding_idx=0)
         # self.embedding.weight.requires_grad = False
         self.dropout = nn.Dropout(0.2)

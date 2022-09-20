@@ -91,8 +91,8 @@ class MRNNCell(nn.Module):
         self.Whh = nn.Linear(hidden_size, hidden_size)
         self.h2o = nn.Linear(input_size, output_size)
 
-        self.w_im = nn.Linear(embed_size, hidden_size, bias=False)
-        self.w_hm = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.w_im = nn.Linear(embed_size, hidden_size)
+        self.w_hm = nn.Linear(hidden_size, hidden_size)
 
     def forward(self, data, last_hidden):
         input = torch.cat((data, last_hidden), 1)
