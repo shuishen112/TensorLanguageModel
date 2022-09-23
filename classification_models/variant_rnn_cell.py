@@ -113,6 +113,31 @@ class MRNNCell(nn.Module):
         )
 
 
+class SecondOrderCell(nn.Module):
+    def __init__(self, embed_size, hidden_size, output_size):
+        super(SecondOrderCell, self).__init__()
+        # tensor network unit
+        self.output_size = output_size
+        self.hidden_size = hidden_size
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.three_order = nn.Bilinear(embed_size, self.hidden_size, self.hidden_size)
+        self.h2o = nn.Linear(self.hidden_size, output_size)
+
+    def forward(self, data, last_hidden):
+
+        hidden = nn.Tanh(self.three_order(data, last_hidden))
+        output = self.h2o(hidden)
+
+        return output,hidden
+
+    def initHidden(self, batch_size):
+        # return torch.ones(batch_size, 1, self.rank).to(self.device)
+        return nn.init.kaiming_uniform_(torch.empty(batch_size, self.hidden_size)).to(
+            self.device
+        )
+
+
 class RACs(nn.Module):
     def __init__(self, embed_size, hidden_size, output_size):
         super(RACs, self).__init__()

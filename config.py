@@ -5,25 +5,25 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "--embed_size",
-    default=9,
+    default=64,
     type=int,
     help="embedding size",
 )
 parser.add_argument(
     "--batch_size",
-    default=32,
+    default=64,
     type=int,
     help="batch_size",
 )
 parser.add_argument(
     "--epoch",
-    default=50,
+    default=30,
     type=int,
     help="epoch",
 )
 parser.add_argument(
     "--hidden_size",
-    default=9,
+    default=64,
     type=int,
     help="hidden_size",
 )
@@ -70,7 +70,7 @@ parser.add_argument("--data_name", default="mr", help=" dataset name")
 
 parser.add_argument(
     "--cell",
-    default="RNN",
+    default="Second",
     help=" cell name: Second, TinyTNLM, RNN, MRNN, MIRNN",
 )
 args = parser.parse_args()

@@ -36,14 +36,14 @@ wandb.define_metric("val_epoch_acc", summary="max")
 # model = litCNN(
 #     len(vocab), e_dim=args.embed_size, h_dim=args.hidden_size, o_dim=args.output_size
 # )
-if args.cell in ["RNN", "MRNN", "MIRNN", "RACs"]:
+if args.cell in ["RNN", "MRNN", "MIRNN", "RACs", "Second"]:
     model = RNN_Model_for_classfication(
         vocab_size=len(data_module.vocab),
         embed_size=args.embed_size,
         hidden_dim=args.hidden_size,
         output_size=args.output_size,
     )
-elif args.cell in ["TinyTNLM", "Second"]:
+elif args.cell in ["TinyTNLM"]:
     model = TN_model_for_classfication(
         rank=args.rank,
         vocab_size=len(data_module.vocab),
@@ -57,7 +57,7 @@ else:
 checkpoint_callback = ModelCheckpoint(
     monitor="val_acc",
     dirpath=f"output/{args.cell}_{args.data_name}",
-    save_top_k=2,
+    save_top_k=1,
     filename="sample-{epoch:02d}-{val_acc:.2f}",
     mode="max",
 )
