@@ -19,6 +19,7 @@ class Baselighting(pl.LightningModule):
 
     def forward(self, x, lengths):
         pass
+
     # optimizers go into configure_optimizer
 
     def configure_optimizers(self):
@@ -94,11 +95,10 @@ class Baselighting(pl.LightningModule):
 
     def training_epoch_end(self, train_step_outputs) -> None:
         all_acc = torch.stack([x["train_acc"] for x in train_step_outputs])
-        print("train_epoch_acc:", torch.mean(all_acc))
         self.log("train_epoch_acc", torch.mean(all_acc))
 
     def validation_epoch_end(self, validation_step_outputs):
         all_acc = torch.stack(validation_step_outputs)
         print("val_epoch_acc:", torch.mean(all_acc))
-        wandb.run.summary["best_val_acc"] = torch.mean(all_acc).cpu().numpy()
+        # wandb.run.summary["best_val_acc"] = torch.mean(all_acc).cpu().numpy()
         self.log("val_epoch_acc", torch.mean(all_acc))

@@ -1,11 +1,12 @@
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from classification_models.base_model import Baselighting, cal_accuracy
 from torch.autograd import Variable
 import torch
 from torch import nn
-from base_model import Baselighthing
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class LSTM(nn.Module):
+class litLSTM(Baselighting):
 
     # define all the layers used in model
     def __init__(
@@ -18,11 +19,13 @@ class LSTM(nn.Module):
         bidirectional,
         dropout,
         pad_index,
+        embedding = None,
     ):
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_index)
+        super(litLSTM, self).__init__()
 
-        # self.embedding.load_state_dict({"weight": torch.tensor(embedding)})
+
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_index)
+        self.embedding.load_state_dict({"weight": torch.tensor(embedding)})
         non_trainable = True
         if non_trainable:
             self.embedding.weight.requires_grad = False
@@ -34,7 +37,7 @@ class LSTM(nn.Module):
             batch_first=True,
         )
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         num_directions = 2 if bidirectional else 1
         self.fc1 = nn.Linear(hidden_dim * num_directions, num_classes)
         self.relu = nn.ReLU()
@@ -43,6 +46,7 @@ class LSTM(nn.Module):
         self.num_directions = num_directions
         self.hidden_dim = hidden_dim
 
+        self.save_hyperparameters()
     def init_hidden(self, batch_size):
         h, c = (
             Variable(
@@ -56,7 +60,7 @@ class LSTM(nn.Module):
                 )
             ),
         )
-        return h.to(self.device), c.to(self.device)
+        return h.to(device), c.to(device)
 
     def forward(self, text, text_lengths):
         batch_size = text.shape[0]
@@ -77,29 +81,29 @@ class LSTM(nn.Module):
         return preds
 
 
-class litRNN(Baselighthing):
-    def __init__(
-        self,
-        vocab_size,
-        embedding_dim,
-        hidden_dim,
-        num_classes,
-        lstm_layers,
-        bidirectional,
-        dropout,
-        pad_index,
-    ):
-        super().__init__()
-        self.model = LSTM(
-            vocab_size=vocab_size,
-            embedding_dim=embedding_dim,
-            hidden_dim=hidden_dim,
-            num_classes=num_classes,
-            lstm_layers=lstm_layers,
-            bidirectional=bidirectional,
-            dropout=dropout,
-            pad_index=pad_index,
-        )
+# class litLSTM(Baselighthing):
+#     def __init__(
+#         self,
+#         vocab_size,
+#         embedding_dim,
+#         hidden_dim,
+#         num_classes,
+#         lstm_layers,
+#         bidirectional,
+#         dropout,
+#         pad_index,
+#     ):
+#         super().__init__()
+#         self.model = LSTM(
+#             vocab_size=vocab_size,
+#             embedding_dim=embedding_dim,
+#             hidden_dim=hidden_dim,
+#             num_classes=num_classes,
+#             lstm_layers=lstm_layers,
+#             bidirectional=bidirectional,
+#             dropout=dropout,
+#             pad_index=pad_index,
+#         )
 
-        # find the batch_size
-        self.save_hyperparameters()
+#         # find the batch_size
+#         self.save_hyperparameters()

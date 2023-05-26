@@ -1,8 +1,16 @@
 from torch import nn
 import torch
 from classification_models.base_model import Baselighting
-from classification_models.variant_rnn_cell import MIRNNCell, RNN, MRNNCell, RACs,SecondOrderCell
+from classification_models.variant_rnn_cell import (
+    MIRNNCell,
+    RNN,
+    MRNNCell,
+    RACs,
+    SecondOrderCell,
+)
 from config import args
+import t3nsor as t3
+import word2ket as w2k
 
 
 class RNN_layer(nn.Module):
@@ -20,8 +28,25 @@ class RNN_layer(nn.Module):
             self.rnn = SecondOrderCell(embed_size, hidden_dim, output_size)
         else:
             print("there is no cell implemented")
+
+        # w2v_embedding_layer = w2k.EmbeddingKet(
+        #     num_embeddings=vocab_size, embedding_dim=embed_size, order=4, rank=1
+        # )
+        # self.embedding = w2v_embedding_layer
+        # args.d = 3
+        # args.ranks = 8
+        # self.embedding = t3.TTEmbedding(
+        #     voc_size=vocab_size,
+        #     emb_size=embed_size,
+        #     auto_shapes=True,
+        #     auto_shape_mode="mixed",
+        #     d=args.d,
+        #     tt_rank=args.ranks,
+        #     padding_idx=1,
+        # )
+
         self.embedding = nn.Embedding(vocab_size, embed_size, padding_idx=0)
-        # self.embedding.weight.requires_grad = False
+        self.embedding.weight.requires_grad = False
         self.dropout = nn.Dropout(0.2)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

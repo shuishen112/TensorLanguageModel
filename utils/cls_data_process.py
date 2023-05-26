@@ -58,9 +58,7 @@ def get_embedding(alphabet, filename="", embedding_size=100):
     return embedding
 
 
-# embedding = get_embedding(
-#     vocab, filename="embedding/glove.6B.300d.txt", embedding_size=300
-# )
+
 
 
 def convert_to_word_ids(sentence, alphabet, max_len=40):
@@ -125,6 +123,10 @@ class ClassificationDataModule(pl.LightningDataModule):
             names=["sentence", "label"],
         )
         self.vocab = get_alphabet([df_train, df_validation])
+
+        self.embeddings = get_embedding(
+            self.vocab, filename="../embedding/glove.6B.300d.txt", embedding_size=300
+        )
 
         self.train = DataMaper(df_train, self.vocab, args.max_length)
         self.validation = DataMaper(df_validation, self.vocab, args.max_length)

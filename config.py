@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "--embed_size",
-    default=64,
+    default=300,
     type=int,
     help="embedding size",
 )
@@ -66,12 +66,16 @@ parser.add_argument(
     default=42,
     help="random seed for initialization",
 )
-parser.add_argument("--data_name", default="mr", help=" dataset name")
+parser.add_argument(
+    "--data_name",
+    default="mpqa",
+    help=" dataset name",
+)
 
 parser.add_argument(
     "--cell",
-    default="Second",
-    help=" cell name: Second, TinyTNLM, RNN, MRNN, MIRNN",
+    default="LSTM",
+    help=" cell name: CNN, Second, TinyTNLM, RNN, MRNN, MIRNN",
 )
 args = parser.parse_args()
 print(args)

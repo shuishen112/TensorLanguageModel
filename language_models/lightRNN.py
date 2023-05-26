@@ -18,10 +18,11 @@ class RNNCell(jit.ScriptModule):
         super(RNNCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        # Initialize the weights with random numbers.
         self.weight_ih = Parameter(torch.randn(hidden_size, input_size))
         self.weight_hh = Parameter(torch.randn(hidden_size, hidden_size))
-        self.bias_ih = Parameter(torch.randn(hidden_size))
-        self.bias_hh = Parameter(torch.randn(hidden_size))
+        self.bias_ih = Parameter(torch.randn(hidden_size)) # input to hidden
+        self.bias_hh = Parameter(torch.randn(hidden_size)) # hidden to hidden
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -31,6 +32,8 @@ class RNNCell(jit.ScriptModule):
 
     @jit.script_method
     def forward(self, input: Tensor, state: Tensor):
+        # input is the input at the current timestep
+        # state is the hidden state from the previous timestep
         hx = state
         hidden = (
             torch.mm(input, self.weight_ih.t())
